@@ -15,27 +15,60 @@ export class AppComponent {
   }
 
   ngOnInit() {
-    this.http.get('http://localhost:4000/components').subscribe((component: any) => {
-      const template = component.template;
+    var components = [];
+    this.http.get('http://localhost:4000/button').subscribe((component: any) => {
+      components.push(this.create_dynamic(component));
 
-      const tmpCmp = Component({ template: template })(class {
-        constructor() {
-          console.log("constructor");
-        }
+      this.http.get('http://localhost:4000/keypad').subscribe((component: any) => {
+        components.push(this.create_dynamic(component));
 
-        run(p) {
-          console.log("run: " + p);
-        }
+        const tmpModule = NgModule({ declarations: components })(class { });
+
+        this._compiler.compileModuleAndAllComponentsAsync(tmpModule)
+          .then((factories) => {
+            console.log(factories);
+
+            const f = factories.componentFactories[1]; // Choose the last one (the main)
+            const cmpRef = f.create(this._injector, [], null, this._m);
+            this._container.insert(cmpRef.hostView);
+          })
       });
-      const tmpModule = NgModule({ declarations: [tmpCmp] })(class { });
+    });
+  }
 
-      this._compiler.compileModuleAndAllComponentsAsync(tmpModule)
-        .then((factories) => {
-          const f = factories.componentFactories[0];
-          const cmpRef = f.create(this._injector, [], null, this._m);
-          cmpRef.instance.name = component.component_name;
-          this._container.insert(cmpRef.hostView);
-        })
+  create_dynamic(component) {
+    const selector = component.selector;
+    const template = component.template;
+    const styles = component.styles;
+    const inputs = component.inputs;
+
+    // const code = component.code;
+    // var code = `
+    //   class {
+    //     constructor() {
+    //       console.log("oeeeeeeee");
+    //     }
+    //   }
+    // `;
+    // return Component({ selector: selector, template: template, styles: styles, inputs: inputs })(code);
+
+    return Component({ selector: selector, template: template, styles: styles, inputs: inputs })(class {
+      public myValue;
+
+      constructor() {
+        if (component.methods) {
+          console.log("constructor: ", component.methods);
+          console.log("constructor: ", typeof component.methods);
+          var methods = JSON.parse(component.methods);
+          for (const key of Object.keys(methods)) {
+            console.log("key: ", methods[key]);
+            const method = methods[key].method;
+            const params = methods[key].params;
+            this[key] = new Function(params, method);
+            console.log("typeof key: ", typeof this[key]);
+          }
+        }
+      }
     });
   }
 }
