@@ -1,5 +1,6 @@
-import { Component, ViewChild, ViewContainerRef, NgModule, Compiler, Injector, NgModuleRef } from "@angular/core";
+import { Component, ViewChild, ViewContainerRef, NgModule, Compiler, Injector, NgModuleRef, EventEmitter } from "@angular/core";
 import { HttpClient } from '@angular/common/http';
+import { FormsModule } from '@angular/forms';
 
 @Component({
   selector: 'app-root',
@@ -22,7 +23,7 @@ export class AppComponent {
       this.http.get('http://localhost:4000/keypad').subscribe((component: any) => {
         components.push(this.create_dynamic(component));
 
-        const tmpModule = NgModule({ declarations: components })(class { });
+        const tmpModule = NgModule({ declarations: components, imports: [FormsModule] })(class { });
 
         this._compiler.compileModuleAndAllComponentsAsync(tmpModule)
           .then((factories) => {
@@ -41,6 +42,7 @@ export class AppComponent {
     const template = component.template;
     const styles = component.styles;
     const inputs = component.inputs;
+    const outputs = component.outputs;
 
     // const code = component.code;
     // var code = `
@@ -52,8 +54,14 @@ export class AppComponent {
     // `;
     // return Component({ selector: selector, template: template, styles: styles, inputs: inputs })(code);
 
-    return Component({ selector: selector, template: template, styles: styles, inputs: inputs })(class {
-      public myValue;
+    return Component({
+      selector: selector,
+      template: template,
+      styles: styles,
+      inputs: inputs,
+      outputs: outputs
+    })(class {
+      public myOut = new EventEmitter();
 
       constructor() {
         if (component.methods) {
