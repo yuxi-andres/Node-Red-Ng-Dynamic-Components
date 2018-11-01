@@ -54,6 +54,21 @@ async function bootstrap() {
         });
         buttonNodeKey.send(req.query);
     });
+
+    app.use("/send_input", (req, res) => {
+        console.log(req.query);
+        var submitButton = RED.nodes.getNode('2fce772b.071328');
+        if (submitButton) {
+            submitButton.send({ payload: req.query.user_input });
+            const response = RED.nodes.getNode('283b1949.5e9db6');
+            response.once('input', function (msg) {
+                console.log('input node text msg', msg);
+                res.status(200).json(msg);
+            });
+        } else {
+            res.status(200).json("Node not found");
+        }
+    });
 }
 
 bootstrap();
