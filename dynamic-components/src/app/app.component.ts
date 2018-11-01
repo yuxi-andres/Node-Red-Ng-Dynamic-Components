@@ -18,10 +18,10 @@ export class AppComponent {
   ngOnInit() {
     var components = [];
     this.http.get('http://localhost:4000/button').subscribe((component: any) => {
-      components.push(this.create_dynamic(component));
+      components.push(this.create_dynamic(component, this._injector));
 
       this.http.get('http://localhost:4000/keypad').subscribe((component: any) => {
-        components.push(this.create_dynamic(component));
+        components.push(this.create_dynamic(component, this._injector));
 
         const tmpModule = NgModule({ declarations: components, imports: [FormsModule] })(class { });
 
@@ -37,7 +37,7 @@ export class AppComponent {
     });
   }
 
-  create_dynamic(component) {
+  create_dynamic(component, _injector) {
     const selector = component.selector;
     const template = component.template;
     const styles = component.styles;
@@ -77,6 +77,8 @@ export class AppComponent {
           }
         }
       }
+
+      http = _injector.get(HttpClient);
     });
   }
 }
